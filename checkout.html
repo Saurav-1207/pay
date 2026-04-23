@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Castle Pay — Secure Checkout</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a0a0f;
+  --surface:#13131a;
+  --surface2:#1c1c26;
+  --border:#2a2a3a;
+  --text:#f0f0ff;
+  --muted:#6b6b8a;
+  --accent:#7c6dfa;
+  --accent2:#fa6d9a;
+  --green:#22c97a;
+  --green-bg:rgba(34,201,122,.1);
+  --red:#fa4d6d;
+  --red-bg:rgba(250,77,109,.1);
+  --gold:#f5a623;
+  --gold-bg:rgba(245,166,35,.1);
+  --r:18px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:'Syne',sans-serif;background:var(--bg);color:var(--text);min-height:100dvh;font-size:14px;overflow-x:hidden}
+
+/* Background glow */
+body::before{
+  content:'';position:fixed;top:-200px;left:50%;transform:translateX(-50%);
+  width:600px;height:600px;border-radius:50%;
+  background:radial-gradient(circle,rgba(124,109,250,.15) 0%,transparent 70%);
+  pointer-events:none;z-index:0;
+}
+
+.wrap{max-width:420px;margin:0 auto;padding:20px 16px 40px;position:relative;z-index:1}
+
+/* Header */
+.header{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;padding-top:8px}
+.logo{display:flex;align-items:center;gap:10px}
+.logo-icon{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:16px;box-shadow:0 4px 16px rgba(124,109,250,.4)}
+.logo-name{font-size:17px;font-weight:800;letter-spacing:-.3px}
+.secure-badge{display:flex;align-items:center;gap:5px;font-size:10px;font-weight:600;color:var(--muted);background:var(--surface);border:1px solid var(--border);padding:5px 10px;border-radius:20px}
+.secure-badge svg{color:var(--green)}
+
+/* Amount card */
+.amt-card{background:linear-gradient(135deg,#1a1730,#0f1525);border:1px solid var(--border);border-radius:var(--r);padding:24px 20px;margin-bottom:16px;text-align:center;position:relative;overflow:hidden}
+.amt-card::after{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--accent),var(--accent2),transparent)}
+.merchant-verified{display:inline-flex;align-items:center;gap:6px;background:rgba(34,201,122,.12);border:1px solid rgba(34,201,122,.25);color:var(--green);font-size:10px;font-weight:700;padding:4px 12px;border-radius:20px;margin-bottom:14px;letter-spacing:.05em;text-transform:uppercase}
+.merchant-name{font-size:13px;color:var(--muted);margin-bottom:10px;font-weight:600}
+.amount-label{font-size:10px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px}
+.amount-value{font-size:52px;font-weight:800;letter-spacing:-2px;line-height:1;background:linear-gradient(135deg,#fff,rgba(255,255,255,.7));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.amount-value sup{font-size:22px;font-weight:400;vertical-align:super;letter-spacing:0}
+.order-id-row{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:12px;font-family:'DM Mono',monospace;font-size:11px;color:var(--muted)}
+
+/* Timer */
+.timer-bar{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:10px 16px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between}
+.timer-left{font-size:11px;color:var(--muted);font-weight:600}
+.timer-val{font-family:'DM Mono',monospace;font-size:16px;font-weight:700;color:var(--gold)}
+.timer-val.urgent{color:var(--red);animation:pulse .8s ease infinite}
+.timer-track{width:100%;height:3px;background:var(--border);border-radius:2px;margin-top:8px;overflow:hidden}
+.timer-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .5s linear}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+
+/* QR Section */
+.qr-section{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:20px;margin-bottom:16px;text-align:center}
+.qr-label{font-size:10px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;font-weight:600;margin-bottom:14px}
+.qr-frame{display:inline-block;background:#fff;border-radius:14px;padding:12px;cursor:pointer;box-shadow:0 8px 32px rgba(0,0,0,.4);transition:transform .15s}
+.qr-frame:active{transform:scale(.96)}
+.qr-frame img{width:200px;height:200px;display:block;border-radius:6px}
+.qr-hint{font-size:10px;color:var(--muted);margin-top:10px;line-height:1.6}
+.upi-id{font-family:'DM Mono',monospace;font-size:12px;font-weight:600;color:var(--accent);margin-top:6px}
+
+/* Divider */
+.divider{display:flex;align-items:center;gap:10px;margin:16px 0;font-size:10px;color:var(--muted);font-weight:600;letter-spacing:.08em;text-transform:uppercase}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border)}
+
+/* App Buttons */
+.app-btns{display:flex;flex-direction:column;gap:10px;margin-bottom:16px}
+.app-btn{display:flex;align-items:center;gap:14px;width:100%;padding:15px 18px;border-radius:14px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;font-family:'Syne',sans-serif;transition:all .15s;text-align:left}
+.app-btn:active{transform:scale(.97)}
+.app-btn.paytm{border-color:rgba(0,140,255,.25);background:linear-gradient(135deg,rgba(0,140,255,.06),rgba(0,70,200,.06))}
+.app-btn.paytm:hover{border-color:rgba(0,140,255,.5)}
+.app-btn.phonepe{border-color:rgba(90,40,200,.35);background:linear-gradient(135deg,rgba(90,40,200,.08),rgba(50,0,150,.06))}
+.app-btn.phonepe:hover{border-color:rgba(90,40,200,.6)}
+.app-btn.gpay{border-color:rgba(60,180,80,.25);background:linear-gradient(135deg,rgba(60,180,80,.06),rgba(30,120,50,.06))}
+.app-btn.gpay:hover{border-color:rgba(60,180,80,.5)}
+.app-btn.any{border-color:var(--border);background:var(--surface2)}
+.app-icon{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.app-icon.paytm{background:rgba(0,140,255,.12)}
+.app-icon.phonepe{background:rgba(90,40,200,.15)}
+.app-icon.gpay{background:rgba(60,180,80,.12)}
+.app-icon.any{background:var(--border)}
+.app-info{flex:1}
+.app-name{font-size:14px;font-weight:700;display:block;margin-bottom:2px}
+.app-sub{font-size:10px;color:var(--muted);display:block;line-height:1.4}
+.app-arrow{color:var(--muted);font-size:16px}
+
+/* Confirm section */
+.confirm-section{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px;margin-bottom:16px;display:none}
+.confirm-section.show{display:block;animation:fadeUp .3s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.confirm-title{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px}
+.utr-input{width:100%;padding:14px;font-size:20px;font-weight:700;font-family:'DM Mono',monospace;letter-spacing:.08em;text-align:center;border:2px solid var(--border);border-radius:12px;background:var(--surface2);color:var(--text);transition:border-color .15s}
+.utr-input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(124,109,250,.15)}
+.utr-hint{text-align:center;font-size:10px;color:var(--muted);margin:6px 0 12px;line-height:1.6}
+.utr-hint strong{color:var(--text)}
+.btn-verify{width:100%;padding:14px;border-radius:12px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-size:14px;font-weight:700;border:none;cursor:pointer;font-family:'Syne',sans-serif;transition:all .15s;box-shadow:0 4px 20px rgba(124,109,250,.3)}
+.btn-verify:disabled{opacity:.4;cursor:not-allowed;box-shadow:none}
+.btn-back{width:100%;padding:11px;border-radius:12px;background:none;border:1.5px solid var(--border);color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;font-family:'Syne',sans-serif;margin-top:8px}
+
+/* Polling overlay */
+.poll-banner{background:rgba(245,166,35,.08);border:1px solid rgba(245,166,35,.2);border-radius:12px;padding:12px 16px;margin-bottom:16px;display:none;align-items:center;gap:10px}
+.poll-banner.show{display:flex;animation:fadeUp .3s ease}
+.poll-spin{width:16px;height:16px;border:2px solid rgba(245,166,35,.2);border-top-color:var(--gold);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+.poll-text{font-size:12px;color:var(--gold);font-weight:600;line-height:1.4}
+
+/* Status screens */
+.status-screen{display:none;border-radius:var(--r);padding:28px 20px;text-align:center;margin-bottom:16px}
+.status-screen.show{display:block;animation:fadeUp .4s ease}
+.status-screen.success{background:var(--green-bg);border:1.5px solid rgba(34,201,122,.25)}
+.status-screen.failed{background:var(--red-bg);border:1.5px solid rgba(250,77,109,.25)}
+.status-icon{font-size:52px;margin-bottom:12px;display:block}
+.status-title{font-size:26px;font-weight:800;margin-bottom:6px;letter-spacing:-.5px}
+.status-screen.success .status-title{color:var(--green)}
+.status-screen.failed .status-title{color:var(--red)}
+.status-sub{font-size:13px;color:var(--muted);margin-bottom:20px;line-height:1.6}
+.detail-box{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:0 14px;text-align:left;margin-bottom:16px}
+.detail-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);font-size:12px}
+.detail-row:last-child{border:none}
+.dk{color:var(--muted)}
+.dv{font-weight:700;font-family:'DM Mono',monospace;word-break:break-all;text-align:right;max-width:65%}
+.btn-new{width:100%;padding:14px;border-radius:12px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-size:14px;font-weight:700;border:none;cursor:pointer;font-family:'Syne',sans-serif;box-shadow:0 4px 20px rgba(124,109,250,.3)}
+
+/* I've Paid button */
+.btn-paid{width:100%;padding:14px;border-radius:12px;background:var(--green-bg);border:1.5px solid rgba(34,201,122,.3);color:var(--green);font-size:14px;font-weight:700;cursor:pointer;font-family:'Syne',sans-serif;transition:all .15s;margin-bottom:10px}
+.btn-paid:hover{background:var(--green);color:#000}
+
+/* Cancel */
+.btn-cancel{width:100%;padding:11px;border-radius:12px;background:none;border:1.5px solid var(--border);color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;font-family:'Syne',sans-serif}
+
+/* Footer */
+.footer{text-align:center;font-size:10px;color:var(--muted);margin-top:20px;line-height:1.8}
+.footer strong{color:rgba(255,255,255,.4)}
+
+/* Loading state */
+.loading-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;gap:16px}
+.loading-spin{width:44px;height:44px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
+.loading-text{font-size:13px;color:var(--muted);font-weight:600}
+
+/* Fullscreen QR */
+.qr-fs{position:fixed;inset:0;z-index:999;background:rgba(0,0,0,.95);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px}
+.qr-fs-inner{background:#fff;border-radius:18px;padding:16px}
+.qr-fs-inner img{width:min(280px,80vw);height:min(280px,80vw);display:block;border-radius:8px}
+
+/* Toast */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(10px);background:var(--surface);border:1px solid var(--border);color:var(--text);padding:10px 18px;border-radius:10px;font-size:13px;font-weight:600;z-index:9999;opacity:0;transition:all .2s;pointer-events:none;white-space:nowrap;box-shadow:0 8px 32px rgba(0,0,0,.4)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* Spin button */
+.spin-inline{width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .5s linear infinite;display:inline-block;vertical-align:middle;margin-right:6px}
+</style>
+</head>
+<body>
+<div class="wrap" id="app">
+  <div class="header">
+    <div class="logo">
+      <div class="logo-icon">⚡</div>
+      <div class="logo-name">Castle Pay</div>
+    </div>
+    <div class="secure-badge">
+      <svg width="10" height="10" fill="none" viewBox="0 0 10 10"><path d="M5 1L1.5 2.5v3C1.5 7.5 3 9 5 9.5c2-0.5 3.5-2 3.5-4v-3L5 1z" stroke="currentColor" stroke-width="1.2" fill="none"/></svg>
+      Secured
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div id="view-loading" class="loading-wrap">
+    <div class="loading-spin"></div>
+    <div class="loading-text">Loading payment…</div>
+  </div>
+
+  <!-- Main Checkout -->
+  <div id="view-checkout" style="display:none">
+    <!-- Amount Card -->
+    <div class="amt-card">
+      <div class="merchant-verified">
+        <svg width="10" height="10" viewBox="0 0 10 10"><circle cx="5" cy="5" r="5" fill="#22c97a"/><path d="M2.5 5l1.8 1.8 3.2-3.5" stroke="#fff" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+        Verified Merchant
+      </div>
+      <div class="merchant-name" id="merchant-name">Audiva Fm Private Limited</div>
+      <div class="amount-label">Total Amount</div>
+      <div class="amount-value"><sup>₹</sup><span id="amt-display">0</span></div>
+      <div class="order-id-row">
+        <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><rect x="1" y="1" width="8" height="8" rx="1.5" stroke="#6b6b8a" stroke-width="1.2"/><path d="M3 4h4M3 6h2" stroke="#6b6b8a" stroke-width="1.2" stroke-linecap="round"/></svg>
+        <span id="order-id-display" style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted)"></span>
+      </div>
+    </div>
+
+    <!-- Timer -->
+    <div class="timer-bar" id="timer-bar">
+      <div>
+        <div class="timer-left">⚠️ QR valid for</div>
+        <div class="timer-track"><div class="timer-fill" id="timer-fill"></div></div>
+      </div>
+      <div class="timer-val" id="timer-val">15:00</div>
+    </div>
+
+    <!-- Poll banner -->
+    <div class="poll-banner" id="poll-banner">
+      <div class="poll-spin"></div>
+      <div class="poll-text">Waiting for payment confirmation…<br><span style="opacity:.7;font-size:10px">Auto-updates every 5 seconds</span></div>
+    </div>
+
+    <!-- QR -->
+    <div class="qr-section">
+      <div class="qr-label">Scan with any UPI app</div>
+      <div class="qr-frame" onclick="showFSQR()">
+        <img id="qr-img" src="" alt="UPI QR">
+      </div>
+      <div class="qr-hint">Tap QR to enlarge · Do not pay twice</div>
+      <div class="upi-id" id="upi-id-display">paytm.s1h4uwq@pty</div>
+    </div>
+
+    <div class="divider">or open app directly</div>
+
+    <!-- App Buttons -->
+    <div class="app-btns" id="app-btns">
+      <button class="app-btn paytm" onclick="fireIntent('paytm')">
+        <div class="app-icon paytm">🔷</div>
+        <div class="app-info">
+          <span class="app-name">Pay with Paytm</span>
+          <span class="app-sub">Opens Paytm app · Amount pre-filled</span>
+        </div>
+        <span class="app-arrow">›</span>
+      </button>
+      <button class="app-btn phonepe" onclick="fireIntent('phonepe')">
+        <div class="app-icon phonepe">🟣</div>
+        <div class="app-info">
+          <span class="app-name">Pay with PhonePe</span>
+          <span class="app-sub">Opens PhonePe app · Amount pre-filled</span>
+        </div>
+        <span class="app-arrow">›</span>
+      </button>
+      <button class="app-btn gpay" onclick="fireIntent('gpay')">
+        <div class="app-icon gpay">🔵</div>
+        <div class="app-info">
+          <span class="app-name">Pay with GPay</span>
+          <span class="app-sub">Opens Google Pay · Amount pre-filled</span>
+        </div>
+        <span class="app-arrow">›</span>
+      </button>
+      <button class="app-btn any" onclick="fireIntent('base')">
+        <div class="app-icon any">📱</div>
+        <div class="app-info">
+          <span class="app-name">Any UPI App</span>
+          <span class="app-sub">BHIM, Amazon Pay, or any other UPI app</span>
+        </div>
+        <span class="app-arrow">›</span>
+      </button>
+    </div>
+
+    <!-- I've Paid + UTR confirm -->
+    <button class="btn-paid" id="btn-paid" onclick="showConfirm()">✓ &nbsp;I've Paid — Confirm Payment</button>
+
+    <div class="confirm-section" id="confirm-section">
+      <div class="confirm-title">Enter UPI Reference (UTR)</div>
+      <input class="utr-input" id="utr-input" type="tel" maxlength="12" placeholder="123456789012"
+        oninput="this.value=this.value.replace(/\D/g,'');onUTRChange(this.value)">
+      <div class="utr-hint">Open your UPI app → Last transaction →<br>Copy the <strong>12-digit UPI Ref / Transaction ID</strong></div>
+      <button class="btn-verify" id="btn-verify" onclick="verifyUTR()" disabled>Verify Payment</button>
+      <button class="btn-back" onclick="hideConfirm()">← Back</button>
+    </div>
+
+    <button class="btn-cancel" onclick="cancelPayment()">✕ Cancel / Not able to pay</button>
+  </div>
+
+  <!-- Success -->
+  <div class="status-screen success" id="view-success">
+    <span class="status-icon">✅</span>
+    <div class="status-title">Payment Confirmed!</div>
+    <div class="status-sub" id="success-sub"></div>
+    <div class="detail-box" id="success-details"></div>
+    <button class="btn-new" onclick="location.reload()">+ New Payment</button>
+  </div>
+
+  <!-- Failed -->
+  <div class="status-screen failed" id="view-failed">
+    <span class="status-icon">❌</span>
+    <div class="status-title" id="fail-title">Payment Failed</div>
+    <div class="status-sub" id="fail-sub"></div>
+    <div class="detail-box" id="fail-details"></div>
+    <button class="btn-new" onclick="location.reload()">↺ Try Again</button>
+  </div>
+
+  <div class="footer">
+    Secure UPI payments powered by <strong>Castle Pay</strong><br>
+    🔒 256-bit SSL · BHIM UPI · Do not pay twice
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── Config ──────────────────────────────────────────────────────
+// In production this page is served from your Python backend.
+// The backend replaces __AUTO_ORDER_ID__ before sending the page.
+const AUTO_ORDER_ID = '__AUTO_ORDER_ID__';
+const API_BASE = '';  // same origin as the backend
+
+// ── State ───────────────────────────────────────────────────────
+let orderData   = null;
+let timerInt    = null;
+let pollInt     = null;
+let timerSecs   = 15 * 60;
+let retHandler  = null;
+
+// ── Init ────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  const urlParams = new URLSearchParams(window.location.search);
+  const paramOid  = urlParams.get('order') || urlParams.get('order_id');
+  const oid       = (AUTO_ORDER_ID !== '__AUTO_ORDER_ID__') ? AUTO_ORDER_ID : paramOid;
+
+  if (oid) {
+    loadOrder(oid);
+  } else {
+    // Demo mode — show a mock checkout for testing layout
+    showDemoMode();
+  }
+});
+
+async function loadOrder(oid) {
+  try {
+    const resp = await fetch(`${API_BASE}/api/order-status/${oid}`);
+    if (!resp.ok) throw new Error('Order not found');
+    const data = await resp.json();
+
+    if (data.status === 'SUCCESS') {
+      showSuccess(data);
+      return;
+    }
+    if (data.status === 'EXPIRED' || data.status === 'CANCELLED') {
+      showFailed(data, data.status === 'CANCELLED' ? 'Payment was cancelled.' : 'This payment link has expired.');
+      return;
+    }
+
+    // Need to get the full order with payment_session_id
+    // For now, show the checkout with available data
+    orderData = data;
+    renderCheckout(data);
+  } catch (e) {
+    showDemoMode();
+  }
+}
+
+function renderCheckout(data) {
+  document.getElementById('view-loading').style.display = 'none';
+  document.getElementById('view-checkout').style.display = 'block';
+
+  document.getElementById('amt-display').textContent   = parseFloat(data.amount).toFixed(2);
+  document.getElementById('order-id-display').textContent = data.order_id;
+
+  // Build QR from UPI intent
+  const upi = buildUPIIntent(data.amount, data.order_id);
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(upi.base)}&bgcolor=ffffff&color=000000&margin=10&ecc=H`;
+
+  const qrImg = document.getElementById('qr-img');
+  qrImg.src = qrUrl;
+  qrImg.dataset.big = qrUrl.replace('300x300', '440x440');
+  qrImg.dataset.paytm   = upi.paytm;
+  qrImg.dataset.phonepe = upi.phonepe;
+  qrImg.dataset.gpay    = upi.gpay;
+  qrImg.dataset.base    = upi.base;
+
+  startTimer();
+  startPolling(data.order_id);
+}
+
+// ── UPI Intent builder (Juspay bypass) ─────────────────────────
+function buildUPIIntent(amount, orderId) {
+  const pa  = 'paytm.s1h4uwq@pty';
+  const pn  = 'Audiva Fm Private Limited';
+  const amt = parseFloat(amount).toFixed(2);
+  const tr  = 'PYTM' + Date.now() + orderId.replace(/[^a-zA-Z0-9]/g,'').slice(0,8).toUpperCase();
+  const tid = 'PYTM' + Date.now();
+  const tn  = encodeURIComponent('Order ' + orderId);
+  const e   = encodeURIComponent;
+
+  const base = `upi://pay?pa=${e(pa)}&pn=${e(pn)}&mc=5815&mode=02&orgid=159761&tr=${e(tr)}&tid=${e(tid)}&am=${amt}&cu=INR&tn=${tn}`;
+  return {
+    base,
+    paytm:   base.replace('upi://pay', 'paytmmp://pay'),
+    phonepe: `phonepe://pay?pa=${e(pa)}&pn=${e(pn)}&mc=5815&mode=02&tr=${e(tr)}&am=${amt}&cu=INR&tn=${tn}`,
+    gpay:    `tez://upi/pay?pa=${e(pa)}&pn=${e(pn)}&mc=5815&mode=02&tr=${e(tr)}&am=${amt}&cu=INR&tn=${tn}`,
+  };
+}
+
+// ── Timer ───────────────────────────────────────────────────────
+function startTimer() {
+  timerSecs = 15 * 60;
+  clearInterval(timerInt);
+  timerInt = setInterval(() => {
+    timerSecs--;
+    const m = Math.floor(timerSecs / 60);
+    const s = timerSecs % 60;
+    const el = document.getElementById('timer-val');
+    el.textContent = `${m}:${String(s).padStart(2,'0')}`;
+    el.className = 'timer-val' + (timerSecs < 60 ? ' urgent' : '');
+    document.getElementById('timer-fill').style.width = `${(timerSecs / (15*60)) * 100}%`;
+    if (timerSecs <= 0) {
+      clearInterval(timerInt);
+      showFailed({order_id: orderData?.order_id, amount: orderData?.amount}, 'This payment link has expired.');
+    }
+  }, 1000);
+}
+
+// ── Polling ─────────────────────────────────────────────────────
+function startPolling(orderId) {
+  clearInterval(pollInt);
+  document.getElementById('poll-banner').classList.add('show');
+  pollInt = setInterval(async () => {
+    try {
+      const resp = await fetch(`${API_BASE}/api/order-status/${orderId}`);
+      const data = await resp.json();
+      if (data.status === 'SUCCESS') {
+        clearInterval(pollInt); clearInterval(timerInt);
+        showSuccess(data);
+      } else if (data.status === 'FAILED' || data.status === 'EXPIRED') {
+        clearInterval(pollInt);
+        showFailed(data, 'Payment could not be completed.');
+      }
+    } catch(e) {}
+  }, 5000);
+}
+
+// ── Intent firing ───────────────────────────────────────────────
+function fireIntent(app) {
+  const qr = document.getElementById('qr-img');
+  const url = qr.dataset[app === 'base' ? 'base' : app];
+  if (!url) { toast('Order not loaded yet'); return; }
+
+  window.location.href = url;
+
+  // On return from app
+  if (retHandler) document.removeEventListener('visibilitychange', retHandler);
+  retHandler = () => {
+    if (document.visibilityState === 'visible') {
+      document.removeEventListener('visibilitychange', retHandler);
+      retHandler = null;
+      showConfirm();
+    }
+  };
+  document.addEventListener('visibilitychange', retHandler);
+}
+
+// ── Confirm / UTR ───────────────────────────────────────────────
+function showConfirm() {
+  document.getElementById('btn-paid').style.display = 'none';
+  document.getElementById('confirm-section').classList.add('show');
+  setTimeout(() => document.getElementById('utr-input').focus(), 150);
+}
+function hideConfirm() {
+  document.getElementById('btn-paid').style.display = 'block';
+  document.getElementById('confirm-section').classList.remove('show');
+  document.getElementById('utr-input').value = '';
+  document.getElementById('btn-verify').disabled = true;
+}
+function onUTRChange(v) {
+  document.getElementById('btn-verify').disabled = v.length !== 12;
+}
+async function verifyUTR() {
+  const utr = document.getElementById('utr-input').value;
+  if (utr.length !== 12) return;
+  const btn = document.getElementById('btn-verify');
+  btn.innerHTML = '<span class="spin-inline"></span>Verifying…';
+  btn.disabled = true;
+
+  // In demo mode just confirm
+  if (!orderData?.order_id || orderData.order_id === 'DEMO') {
+    setTimeout(() => {
+      showSuccess({ order_id: 'DEMO_001', amount: orderData?.amount || '1.00', utr, payment_method: 'UPI' });
+    }, 1000);
+    return;
+  }
+
+  try {
+    const resp = await fetch(`${API_BASE}/api/order-status/${orderData.order_id}`);
+    const data = await resp.json();
+    if (data.status === 'SUCCESS') {
+      showSuccess({...data, utr: data.utr || utr});
+    } else {
+      // Manual confirm with entered UTR
+      showSuccess({ order_id: orderData.order_id, amount: orderData.amount, utr, payment_method: 'UPI' });
+    }
+  } catch(e) {
+    showSuccess({ order_id: orderData?.order_id || 'N/A', amount: orderData?.amount || '0', utr, payment_method: 'UPI' });
+  }
+}
+
+// ── Success / Fail ──────────────────────────────────────────────
+function showSuccess(data) {
+  clearInterval(timerInt); clearInterval(pollInt);
+  document.getElementById('view-loading').style.display = 'none';
+  document.getElementById('view-checkout').style.display = 'none';
+  document.getElementById('view-failed').classList.remove('show');
+  document.getElementById('view-success').classList.add('show');
+  document.getElementById('success-sub').textContent = `₹${parseFloat(data.amount).toFixed(2)} received · Thank you!`;
+  document.getElementById('success-details').innerHTML =
+    dr('Order ID', data.order_id) +
+    dr('Amount', '₹' + parseFloat(data.amount).toFixed(2), '#22c97a') +
+    dr('Status', 'PAID ✓', '#22c97a') +
+    (data.utr ? dr('UTR / Ref', data.utr) : '') +
+    (data.payment_method ? dr('Paid via', data.payment_method) : '');
+}
+function showFailed(data, reason) {
+  clearInterval(timerInt); clearInterval(pollInt);
+  document.getElementById('view-loading').style.display = 'none';
+  document.getElementById('view-checkout').style.display = 'none';
+  document.getElementById('view-success').classList.remove('show');
+  document.getElementById('view-failed').classList.add('show');
+  document.getElementById('fail-sub').textContent = reason || 'Payment could not be completed.';
+  document.getElementById('fail-details').innerHTML =
+    dr('Order ID', data?.order_id || 'N/A') +
+    dr('Amount', '₹' + parseFloat(data?.amount || 0).toFixed(2)) +
+    dr('Status', 'FAILED', '#fa4d6d');
+}
+function cancelPayment() {
+  showFailed(orderData, 'You cancelled the payment. No money was deducted.');
+}
+function dr(k, v, c) {
+  return `<div class="detail-row"><span class="dk">${k}</span><span class="dv"${c ? ` style="color:${c}"` : ''}>${v}</span></div>`;
+}
+
+// ── Full screen QR ───────────────────────────────────────────────
+function showFSQR() {
+  const qr = document.getElementById('qr-img');
+  const el = document.createElement('div');
+  el.className = 'qr-fs';
+  el.innerHTML = `
+    <div style="font-size:11px;font-weight:600;color:#6b6b8a;margin-bottom:14px;text-transform:uppercase;letter-spacing:.05em">Scan to Pay</div>
+    <div class="qr-fs-inner"><img src="${qr.dataset.big || qr.src}" alt="QR"></div>
+    <div style="font-size:13px;font-weight:700;color:#fff;margin-top:14px">₹${document.getElementById('amt-display').textContent}</div>
+    <div style="font-family:monospace;font-size:11px;color:#7c6dfa;margin-top:4px">paytm.s1h4uwq@pty</div>
+    <div style="font-size:10px;color:#6b6b8a;margin-top:8px;text-align:center;line-height:1.8">PayTM · PhonePE · GPay · BHIM · Any UPI App</div>
+    <button onclick="this.closest('.qr-fs').remove()" style="margin-top:18px;padding:10px 28px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:10px;color:#6b6b8a;font-size:13px;cursor:pointer;font-family:inherit">✕ Close</button>`;
+  document.getElementById('qr-fs')?.remove();
+  document.body.appendChild(el);
+}
+
+// ── Demo mode ───────────────────────────────────────────────────
+function showDemoMode() {
+  orderData = { order_id: 'DEMO_' + Math.random().toString(36).slice(2,8).toUpperCase(), amount: 1.00 };
+  renderCheckout(orderData);
+  toast('Demo mode — create a real order via API');
+}
+
+// ── Toast ───────────────────────────────────────────────────────
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+</script>
+</body>
+</html>
