@@ -96,8 +96,8 @@ async def create_order(req: CreateOrderRequest):
             "customer_phone": req.customer_phone,
         },
         "order_meta": {
-            "return_url": f"https://your-domain.com/pay/{order_id}?status=done",
-            "notify_url": f"https://your-domain.com/api/webhook",
+            "return_url": f"https://pay-production-2e32.up.railway.app/pay/{order_id}?status=done",
+            "notify_url": f"pay-production-2e32.up.railway.app/api/webhook",
         },
         "order_expiry_time": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S+05:30").replace("+05:30", "Z"),
     }
