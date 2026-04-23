@@ -83,7 +83,12 @@ async def create_order(req: CreateOrderRequest):
         raise HTTPException(status_code=500, detail="Cashfree credentials not configured. Set CF_APP_ID and CF_SECRET_KEY environment variables.")
 
     order_id = "CF_" + uuid.uuid4().hex[:12].upper()
-    
+
+    # Expiry: now + 30 min in IST (Cashfree requires >15 min, <30 days)
+    _IST = timezone(timedelta(hours=5, minutes=30))
+    _expiry = datetime.now(_IST) + timedelta(minutes=30)
+    _expiry_str = _expiry.strftime("%Y-%m-%dT%H:%M:%S+05:30")
+
     payload = {
         "order_id": order_id,
         "order_amount": round(req.amount, 2),
@@ -99,10 +104,7 @@ async def create_order(req: CreateOrderRequest):
             "return_url": f"https://pay-production-2e32.up.railway.app/pay/{order_id}?status=done",
             "notify_url": f"https://pay-production-2e32.up.railway.app/api/webhook",
         },
-        # Cashfree requires expiry > 15 min and < 30 days from now, in IST
-        IST = timezone(timedelta(hours=5, minutes=30))
-        expiry = datetime.now(IST) + timedelta(minutes=30)
-        "order_expiry_time": expiry.strftime("%Y-%m-%dT%H:%M:%S+05:30"),
+        "order_expiry_time": _expiry_str,
     }
 
     async with httpx.AsyncClient() as client:
