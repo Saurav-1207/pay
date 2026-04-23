@@ -10,7 +10,7 @@ import time
 import uuid
 import os
 import json
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 
 app = FastAPI(title="Castle Pay Backend")
 
@@ -99,7 +99,10 @@ async def create_order(req: CreateOrderRequest):
             "return_url": f"https://pay-production-2e32.up.railway.app/pay/{order_id}?status=done",
             "notify_url": f"https://pay-production-2e32.up.railway.app/api/webhook",
         },
-        "order_expiry_time": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S+05:30").replace("+05:30", "Z"),
+        # Cashfree requires expiry > 15 min and < 30 days from now, in IST
+        IST = timezone(timedelta(hours=5, minutes=30))
+        expiry = datetime.now(IST) + timedelta(minutes=30)
+        "order_expiry_time": expiry.strftime("%Y-%m-%dT%H:%M:%S+05:30"),
     }
 
     async with httpx.AsyncClient() as client:
