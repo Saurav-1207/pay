@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Castle Pay — Secure Checkout</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<!-- Cashfree SDK — swap src for production -->
+<script src="https://sdk.cashfree.com/js/v3/cashfree.js"></script>
+
+<style>
+:root{
+  --bg:#0a0a0f;--surface:#13131a;--surface2:#1c1c26;--border:#2a2a3a;
+  --text:#f0f0ff;--muted:#6b6b8a;
+  --accent:#7c6dfa;--accent2:#fa6d9a;
+  --green:#22c97a;--green-bg:rgba(34,201,122,.1);
+  --red:#fa4d6d;--red-bg:rgba(250,77,109,.1);
+  --gold:#f5a623;--gold-bg:rgba(245,166,35,.1);
+  --r:18px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:'Syne',sans-serif;background:var(--bg);color:var(--text);min-height:100dvh;font-size:14px;overflow-x:hidden}
+body::before{content:'';position:fixed;top:-200px;left:50%;transform:translateX(-50%);width:600px;height:600px;border-radius:50%;background:radial-gradient(circle,rgba(124,109,250,.15) 0%,transparent 70%);pointer-events:none;z-index:0}
+
+.wrap{max-width:420px;margin:0 auto;padding:20px 16px 40px;position:relative;z-index:1}
+
+/* Header */
+.header{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;padding-top:8px}
+.logo{display:flex;align-items:center;gap:10px}
+.logo-icon{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:16px;box-shadow:0 4px 16px rgba(124,109,250,.4)}
+.logo-name{font-size:17px;font-weight:800;letter-spacing:-.3px}
+.secure-badge{display:flex;align-items:center;gap:5px;font-size:10px;font-weight:600;color:var(--muted);background:var(--surface);border:1px solid var(--border);padding:5px 10px;border-radius:20px}
+
+/* Amount card */
+.amt-card{background:linear-gradient(135deg,#1a1730,#0f1525);border:1px solid var(--border);border-radius:var(--r);padding:24px 20px;margin-bottom:16px;text-align:center;position:relative;overflow:hidden}
+.amt-card::after{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--accent),var(--accent2),transparent)}
+.merchant-verified{display:inline-flex;align-items:center;gap:6px;background:rgba(34,201,122,.12);border:1px solid rgba(34,201,122,.25);color:var(--green);font-size:10px;font-weight:700;padding:4px 12px;border-radius:20px;margin-bottom:14px;letter-spacing:.05em;text-transform:uppercase}
+.merchant-name{font-size:13px;color:var(--muted);margin-bottom:10px;font-weight:600}
+.amount-label{font-size:10px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px}
+.amount-value{font-size:52px;font-weight:800;letter-spacing:-2px;line-height:1;background:linear-gradient(135deg,#fff,rgba(255,255,255,.7));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.amount-value sup{font-size:22px;font-weight:400;vertical-align:super;letter-spacing:0}
+.order-id-row{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:12px;font-family:'DM Mono',monospace;font-size:11px;color:var(--muted)}
+
+/* Timer */
+.timer-bar{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:10px 16px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between}
+.timer-left{font-size:11px;color:var(--muted);font-weight:600}
+.timer-val{font-family:'DM Mono',monospace;font-size:16px;font-weight:700;color:var(--gold)}
+.timer-val.urgent{color:var(--red);animation:pulse .8s ease infinite}
+.timer-track{width:100%;height:3px;background:var(--border);border-radius:2px;margin-top:8px;overflow:hidden}
+.timer-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .5s linear}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+
+/* Main pay button */
+.btn-pay-now{
+  width:100%;padding:18px;border-radius:16px;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  color:#fff;font-size:16px;font-weight:800;border:none;cursor:pointer;
+  font-family:'Syne',sans-serif;
+  box-shadow:0 8px 32px rgba(124,109,250,.4);
+  transition:all .15s;margin-bottom:12px;
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  letter-spacing:-.2px;
+}
+.btn-pay-now:hover{transform:translateY(-1px);box-shadow:0 12px 40px rgba(124,109,250,.5)}
+.btn-pay-now:active{transform:scale(.98)}
+.btn-pay-now:disabled{opacity:.5;cursor:not-allowed;transform:none}
+
+/* App pills */
+.app-pills{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.app-pill{display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:20px;border:1px solid var(--border);background:var(--surface);font-size:11px;font-weight:600;color:var(--muted)}
+
+/* Info card */
+.info-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px;margin-bottom:16px}
+.info-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;font-size:12px;color:var(--muted)}
+.info-row:last-child{margin-bottom:0}
+.info-row svg{flex-shrink:0;color:var(--accent)}
+
+/* Status screens */
+.status-screen{display:none;border-radius:var(--r);padding:28px 20px;text-align:center;margin-bottom:16px}
+.status-screen.show{display:block;animation:fadeUp .4s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.status-screen.success{background:var(--green-bg);border:1.5px solid rgba(34,201,122,.25)}
+.status-screen.failed{background:var(--red-bg);border:1.5px solid rgba(250,77,109,.25)}
+.status-icon{font-size:52px;margin-bottom:12px;display:block}
+.status-title{font-size:26px;font-weight:800;margin-bottom:6px;letter-spacing:-.5px}
+.status-screen.success .status-title{color:var(--green)}
+.status-screen.failed .status-title{color:var(--red)}
+.status-sub{font-size:13px;color:var(--muted);margin-bottom:20px;line-height:1.6}
+.detail-box{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:0 14px;text-align:left;margin-bottom:16px}
+.detail-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);font-size:12px}
+.detail-row:last-child{border:none}
+.dk{color:var(--muted)}
+.dv{font-weight:700;font-family:'DM Mono',monospace;word-break:break-all;text-align:right;max-width:65%}
+.btn-new{width:100%;padding:14px;border-radius:12px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-size:14px;font-weight:700;border:none;cursor:pointer;font-family:'Syne',sans-serif;box-shadow:0 4px 20px rgba(124,109,250,.3)}
+
+/* Loading */
+.loading-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;gap:16px}
+.loading-spin{width:44px;height:44px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-text{font-size:13px;color:var(--muted);font-weight:600}
+
+/* Cancel */
+.btn-cancel{width:100%;padding:11px;border-radius:12px;background:none;border:1.5px solid var(--border);color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;font-family:'Syne',sans-serif;margin-top:4px}
+
+/* Footer */
+.footer{text-align:center;font-size:10px;color:var(--muted);margin-top:20px;line-height:1.8}
+.footer strong{color:rgba(255,255,255,.4)}
+
+/* Toast */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(10px);background:var(--surface);border:1px solid var(--border);color:var(--text);padding:10px 18px;border-radius:10px;font-size:13px;font-weight:600;z-index:9999;opacity:0;transition:all .2s;pointer-events:none;white-space:nowrap;box-shadow:0 8px 32px rgba(0,0,0,.4)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+<div class="wrap" id="app">
+  <div class="header">
+    <div class="logo">
+      <div class="logo-icon">⚡</div>
+      <div class="logo-name">Castle Pay</div>
+    </div>
+    <div class="secure-badge">
+      <svg width="10" height="10" fill="none" viewBox="0 0 10 10"><path d="M5 1L1.5 2.5v3C1.5 7.5 3 9 5 9.5c2-0.5 3.5-2 3.5-4v-3L5 1z" stroke="currentColor" stroke-width="1.2"/></svg>
+      Secured
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div id="view-loading" class="loading-wrap">
+    <div class="loading-spin"></div>
+    <div class="loading-text">Loading payment…</div>
+  </div>
+
+  <!-- Main Checkout -->
+  <div id="view-checkout" style="display:none">
+
+    <!-- Amount Card -->
+    <div class="amt-card">
+      <div class="merchant-verified">
+        <svg width="10" height="10" viewBox="0 0 10 10"><circle cx="5" cy="5" r="5" fill="#22c97a"/><path d="M2.5 5l1.8 1.8 3.2-3.5" stroke="#fff" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+        Verified Merchant
+      </div>
+      <div class="merchant-name">Audiva Fm Private Limited</div>
+      <div class="amount-label">Total Amount</div>
+      <div class="amount-value"><sup>₹</sup><span id="amt-display">0</span></div>
+      <div class="order-id-row">
+        <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><rect x="1" y="1" width="8" height="8" rx="1.5" stroke="#6b6b8a" stroke-width="1.2"/><path d="M3 4h4M3 6h2" stroke="#6b6b8a" stroke-width="1.2" stroke-linecap="round"/></svg>
+        <span id="order-id-display" style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted)"></span>
+      </div>
+    </div>
+
+    <!-- Timer -->
+    <div class="timer-bar">
+      <div style="flex:1">
+        <div class="timer-left">⚠️ Complete payment within</div>
+        <div class="timer-track"><div class="timer-fill" id="timer-fill"></div></div>
+      </div>
+      <div class="timer-val" id="timer-val" style="margin-left:12px">15:00</div>
+    </div>
+
+    <!-- Accepted apps -->
+    <div class="app-pills">
+      <div class="app-pill">🔷 Paytm</div>
+      <div class="app-pill">🟣 PhonePe</div>
+      <div class="app-pill">🔵 GPay</div>
+      <div class="app-pill">📱 BHIM</div>
+      <div class="app-pill">+ All UPI Apps</div>
+    </div>
+
+    <!-- THE button — Cashfree SDK handles everything -->
+    <button class="btn-pay-now" id="btn-pay" onclick="startCashfreePayment()">
+      <svg width="20" height="20" fill="none" viewBox="0 0 20 20"><path d="M10 2a8 8 0 100 16A8 8 0 0010 2zm3.5 7.5l-4 4a.75.75 0 01-1.06 0l-2-2a.75.75 0 111.06-1.06L9 11.94l3.44-3.44a.75.75 0 111.06 1.06z" fill="white"/></svg>
+      Pay Securely with UPI
+    </button>
+
+    <!-- Info -->
+    <div class="info-card">
+      <div class="info-row">
+        <svg width="14" height="14" fill="none" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6" stroke="currentColor" stroke-width="1.2"/><path d="M7 6v4M7 4.5v.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+        Tap the button above to open Cashfree's secure UPI checkout
+      </div>
+      <div class="info-row">
+        <svg width="14" height="14" fill="none" viewBox="0 0 14 14"><path d="M2 7l3.5 3.5L12 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Choose Paytm, PhonePe, GPay or scan QR — all work
+      </div>
+      <div class="info-row">
+        <svg width="14" height="14" fill="none" viewBox="0 0 14 14"><path d="M7 1v2M7 11v2M1 7h2M11 7h2M3 3l1.4 1.4M9.6 9.6L11 11M3 11l1.4-1.4M9.6 4.4L11 3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+        Payment confirmed automatically — no UTR entry needed
+      </div>
+    </div>
+
+    <button class="btn-cancel" onclick="cancelPayment()">✕ Cancel payment</button>
+  </div>
+
+  <!-- Success -->
+  <div class="status-screen success" id="view-success">
+    <span class="status-icon">✅</span>
+    <div class="status-title">Payment Confirmed!</div>
+    <div class="status-sub" id="success-sub">Payment received successfully</div>
+    <div class="detail-box" id="success-details"></div>
+    <button class="btn-new" onclick="location.reload()">+ New Payment</button>
+  </div>
+
+  <!-- Failed -->
+  <div class="status-screen failed" id="view-failed">
+    <span class="status-icon">❌</span>
+    <div class="status-title">Payment Failed</div>
+    <div class="status-sub" id="fail-sub"></div>
+    <div class="detail-box" id="fail-details"></div>
+    <button class="btn-new" onclick="location.reload()">↺ Try Again</button>
+  </div>
+
+  <div class="footer">
+    Secure UPI payments powered by <strong>Castle Pay</strong> × <strong>Cashfree</strong><br>
+    🔒 256-bit SSL · BHIM UPI · PCI-DSS Compliant
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── Injected by backend (server replaces __AUTO_ORDER_ID__ and __SESSION_ID__) ──
+const AUTO_ORDER_ID    = '__AUTO_ORDER_ID__';
+const AUTO_SESSION_ID  = '__SESSION_ID__';
+const CF_MODE          = '__CF_MODE__'; // sandbox or production
+
+const API_BASE = '';
+let orderData  = null;
+let timerInt   = null;
+let pollInt    = null;
+let timerSecs  = 15 * 60;
+
+// ── Init ────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  const params  = new URLSearchParams(window.location.search);
+  const oid     = AUTO_ORDER_ID !== '__AUTO_ORDER_ID__' ? AUTO_ORDER_ID : params.get('order');
+  const sid     = AUTO_SESSION_ID !== '__SESSION_ID__'  ? AUTO_SESSION_ID : params.get('session');
+  const mode    = CF_MODE !== '__CF_MODE__' ? CF_MODE : 'sandbox';
+
+  if (oid && sid) {
+    orderData = { order_id: oid, payment_session_id: sid, mode };
+    loadOrderDetails(oid);
+  } else if (oid) {
+    fetchOrderAndRender(oid);
+  } else {
+    // No order — show error
+    document.getElementById('view-loading').style.display = 'none';
+    document.getElementById('view-failed').classList.add('show');
+    document.getElementById('fail-sub').textContent = 'Invalid payment link. Please contact support.';
+  }
+});
+
+async function fetchOrderAndRender(oid) {
+  try {
+    const resp = await fetch(`${API_BASE}/api/order-status/${oid}`);
+    const data = await resp.json();
+    if (data.status === 'SUCCESS') { showSuccess(data); return; }
+    if (data.status === 'EXPIRED') { showFailed(data, 'This payment link has expired.'); return; }
+    orderData = { ...orderData, ...data };
+    renderCheckout(data);
+  } catch(e) {
+    showFailed({}, 'Could not load payment. Please try again.');
+  }
+}
+
+async function loadOrderDetails(oid) {
+  try {
+    const resp = await fetch(`${API_BASE}/api/order-status/${oid}`);
+    const data = await resp.json();
+    if (data.status === 'SUCCESS') { showSuccess(data); return; }
+    orderData = { ...orderData, ...data };
+    renderCheckout(data);
+  } catch(e) {
+    // Still render with what we have
+    renderCheckout(orderData);
+  }
+}
+
+function renderCheckout(data) {
+  document.getElementById('view-loading').style.display = 'none';
+  document.getElementById('view-checkout').style.display = 'block';
+  document.getElementById('amt-display').textContent     = parseFloat(data.amount || orderData?.amount || 0).toFixed(2);
+  document.getElementById('order-id-display').textContent = data.order_id || orderData?.order_id || '';
+  startTimer();
+  startPolling(data.order_id || orderData?.order_id);
+}
+
+// ── Cashfree SDK payment ─────────────────────────────────────────
+function startCashfreePayment() {
+  const sid  = orderData?.payment_session_id;
+  const mode = orderData?.mode || 'sandbox';
+
+  if (!sid) {
+    toast('Session not loaded yet, please wait…');
+    return;
+  }
+
+  const btn = document.getElementById('btn-pay');
+  btn.disabled = true;
+  btn.innerHTML = '<span style="width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .5s linear infinite;display:inline-block"></span> &nbsp;Opening…';
+
+  try {
+    const cashfree = Cashfree({ mode }); // 'sandbox' or 'production'
+    cashfree.checkout({
+      paymentSessionId: sid,
+      redirectTarget:   '_self',       // opens in same tab like antqpay
+    }).then(result => {
+      btn.disabled = false;
+      btn.innerHTML = '⚡ Pay Securely with UPI';
+      if (result.error) {
+        toast('Payment cancelled or failed');
+        console.log(result.error);
+      }
+      if (result.paymentDetails) {
+        // Payment done — check status
+        pollOnce(orderData.order_id);
+      }
+    });
+  } catch(e) {
+    btn.disabled = false;
+    btn.innerHTML = '⚡ Pay Securely with UPI';
+    toast('SDK error: ' + e.message);
+  }
+}
+
+// ── Polling ──────────────────────────────────────────────────────
+function startPolling(oid) {
+  if (!oid) return;
+  clearInterval(pollInt);
+  pollInt = setInterval(() => pollOnce(oid), 5000);
+}
+
+async function pollOnce(oid) {
+  try {
+    const resp = await fetch(`${API_BASE}/api/order-status/${oid}`);
+    const data = await resp.json();
+    if (data.status === 'SUCCESS') {
+      clearInterval(pollInt); clearInterval(timerInt);
+      showSuccess(data);
+    } else if (data.status === 'FAILED' || data.status === 'EXPIRED') {
+      clearInterval(pollInt);
+      showFailed(data, 'Payment could not be completed.');
+    }
+  } catch(e) {}
+}
+
+// ── Timer ────────────────────────────────────────────────────────
+function startTimer() {
+  timerSecs = 15 * 60;
+  clearInterval(timerInt);
+  timerInt = setInterval(() => {
+    timerSecs--;
+    const m = Math.floor(timerSecs / 60);
+    const s = timerSecs % 60;
+    const el = document.getElementById('timer-val');
+    el.textContent = `${m}:${String(s).padStart(2,'0')}`;
+    el.className = 'timer-val' + (timerSecs < 60 ? ' urgent' : '');
+    document.getElementById('timer-fill').style.width = `${(timerSecs / (15*60)) * 100}%`;
+    if (timerSecs <= 0) {
+      clearInterval(timerInt);
+      showFailed({order_id: orderData?.order_id, amount: orderData?.amount}, 'Payment link expired.');
+    }
+  }, 1000);
+}
+
+// ── Success / Fail ───────────────────────────────────────────────
+function showSuccess(data) {
+  clearInterval(timerInt); clearInterval(pollInt);
+  ['view-loading','view-checkout'].forEach(id => document.getElementById(id).style.display = 'none');
+  document.getElementById('view-failed').classList.remove('show');
+  document.getElementById('view-success').classList.add('show');
+  document.getElementById('success-sub').textContent = `₹${parseFloat(data.amount||0).toFixed(2)} received · Thank you!`;
+  document.getElementById('success-details').innerHTML =
+    dr('Order ID', data.order_id||'—') +
+    dr('Amount', '₹'+parseFloat(data.amount||0).toFixed(2), '#22c97a') +
+    dr('Status', 'PAID ✓', '#22c97a') +
+    (data.utr ? dr('UTR / Ref', data.utr) : '') +
+    (data.payment_method ? dr('Paid via', data.payment_method) : '');
+}
+function showFailed(data, reason) {
+  clearInterval(timerInt); clearInterval(pollInt);
+  ['view-loading','view-checkout'].forEach(id => document.getElementById(id).style.display = 'none');
+  document.getElementById('view-success').classList.remove('show');
+  document.getElementById('view-failed').classList.add('show');
+  document.getElementById('fail-sub').textContent = reason || 'Payment could not be completed.';
+  document.getElementById('fail-details').innerHTML =
+    dr('Order ID', data?.order_id||'N/A') +
+    dr('Amount', '₹'+parseFloat(data?.amount||0).toFixed(2)) +
+    dr('Status', 'FAILED', '#fa4d6d');
+}
+function cancelPayment() {
+  showFailed(orderData, 'You cancelled the payment. No money was deducted.');
+}
+function dr(k,v,c){
+  return `<div class="detail-row"><span class="dk">${k}</span><span class="dv"${c?` style="color:${c}"`:''}>>${v}</span></div>`;
+}
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+</script>
+</body>
+</html>
