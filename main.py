@@ -25,8 +25,9 @@ app.add_middleware(
 CF_APP_ID     = os.getenv("CF_APP_ID", "")       # Your Cashfree App ID
 CF_SECRET_KEY = os.getenv("CF_SECRET_KEY", "")   # Your Cashfree Secret Key
 CF_ENV        = os.getenv("CF_ENV", "TEST")       # TEST or PROD
-
 CF_BASE = "https://sandbox.cashfree.com/pg" if CF_ENV == "TEST" else "https://api.cashfree.com/pg"
+
+APP_URL = os.getenv("APP_URL", "https://your-railway-app.up.railway.app")
 
 MERCHANT_NAME = "Audiva Fm Private Limited"
 MERCHANT_VPA  = "paytm.s1h4uwq@pty"
@@ -101,8 +102,8 @@ async def create_order(req: CreateOrderRequest):
             "customer_phone": req.customer_phone,
         },
         "order_meta": {
-            "return_url": f"https://pay-production-2e32.up.railway.app/pay/{order_id}?status=done",
-            "notify_url": f"https://pay-production-2e32.up.railway.app/api/webhook",
+            "return_url": f"{APP_URL}/pay/{order_id}?status=done",
+            "notify_url": f"{APP_URL}/api/webhook",
         },
         "order_expiry_time": _expiry_str,
     }
