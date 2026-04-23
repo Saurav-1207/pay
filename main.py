@@ -96,8 +96,8 @@ async def create_order(req: CreateOrderRequest):
             "customer_phone": req.customer_phone,
         },
         "order_meta": {
-            "return_url": f"https://your-domain.com/pay/{order_id}?status=done",
-            "notify_url": f"https://your-domain.com/api/webhook",
+            "return_url": f"https://pay-production-2e32.up.railway.app/pay/{order_id}?status=done",
+            "notify_url": f"https://pay-production-2e32.up.railway.app/api/webhook",
         },
         # Cashfree requires expiry > 15 min and < 30 days from now, in IST
         IST = timezone(timedelta(hours=5, minutes=30))
